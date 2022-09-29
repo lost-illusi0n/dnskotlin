@@ -37,7 +37,7 @@ public data class MessageQuestion(
                 }
             }
 
-            val qType = ResourceType.fromValue(input.readShort())!!
+            val qType = ResourceType.fromValue(input.readShort())
             val qClass = ResourceClass.fromValue(input.readShort())!!
 
             return MessageQuestion(qName, qType, qClass)

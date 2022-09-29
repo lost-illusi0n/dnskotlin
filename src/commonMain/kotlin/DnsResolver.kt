@@ -6,29 +6,36 @@ import dev.sitar.kio.buffers.buffer
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.utils.io.core.*
+import kotlinx.coroutines.withTimeoutOrNull
 
 public val ROOT_NAME_SERVERS: List<String> = listOf(
-   "a.root-servers.net",
-   "b.root-servers.net",
-   "c.root-servers.net",
-   "d.root-servers.net",
-   "e.root-servers.net",
-   "f.root-servers.net",
-   "g.root-servers.net",
-   "h.root-servers.net",
-   "i.root-servers.net",
-   "j.root-servers.net",
-   "k.root-servers.net",
-   "l.root-servers.net",
-   "m.root-servers.net",
+    "a.root-servers.net",
+    "b.root-servers.net",
+    "c.root-servers.net",
+    "d.root-servers.net",
+    "e.root-servers.net",
+    "f.root-servers.net",
+    "g.root-servers.net",
+    "h.root-servers.net",
+    "i.root-servers.net",
+    "j.root-servers.net",
+    "k.root-servers.net",
+    "l.root-servers.net",
+    "m.root-servers.net",
 )
 
 public sealed interface MessageResponse {
-    public class NameServers(public val nameServers: List<String>): MessageResponse
-    public class Answers(public val answers: List<ResourceRecord>): MessageResponse
+    public class NameServers(public val nameServers: List<String>) : MessageResponse
+    public class Answers(public val answers: List<ResourceRecord>) : MessageResponse
 }
+
 public class DnsResolver(public val socket: BoundDatagramSocket) {
-    public suspend fun resolve(host: String, nameServers: List<String> = ROOT_NAME_SERVERS, block: QuestionBuilder.() -> Unit = { }): MessageResponse? {
+    public suspend fun resolve(
+        host: String,
+        nameServers: List<String> = ROOT_NAME_SERVERS,
+        timeout: Long = 100,
+        block: QuestionBuilder.() -> Unit = { }
+    ): MessageResponse? {
         val queryMessage = message { question(host, block) }
 
         val data = buffer { Message.Factory.marshall(this, queryMessage) }
@@ -36,15 +43,17 @@ public class DnsResolver(public val socket: BoundDatagramSocket) {
         val packet = ByteReadPacket(arr, off, len)
 
         for (root in nameServers) {
-            println("Using server: $root")
-            socket.send(Datagram(packet, InetSocketAddress(root, 53)))
+            socket.send(Datagram(packet.copy(), InetSocketAddress(root, 53)))
 
-            val response = Message.Factory.unmarshall(socket.receive().packet.readBytes().asBuffer())
+            val response = withTimeoutOrNull(timeout) {
+                Message.Factory.unmarshall(socket.receive().packet.readBytes().asBuffer())
+            } ?: continue
 
             when {
                 response.answers.isNotEmpty() -> {
                     return MessageResponse.Answers(response.answers)
                 }
+
                 response.nameServers.isNotEmpty() -> {
                     return MessageResponse.NameServers(response.nameServers.map { it.data.nameServer })
                 }
@@ -54,17 +63,24 @@ public class DnsResolver(public val socket: BoundDatagramSocket) {
         return null
     }
 
-    public suspend fun resolveRecursively(host: String, roots: List<String> = ROOT_NAME_SERVERS, block: QuestionBuilder.() -> Unit = { }): List<ResourceRecord>? {
+    public suspend fun resolveRecursively(
+        host: String,
+        roots: List<String> = ROOT_NAME_SERVERS,
+        timeout: Long = 100,
+        block: QuestionBuilder.() -> Unit = { }
+    ): List<ResourceRecord>? {
         var servers = roots
 
         while (true) {
-            when (val response = resolve(host, servers, block)) {
+            when (val response = resolve(host, servers, timeout, block)) {
                 is MessageResponse.Answers -> {
                     return response.answers
                 }
+
                 is MessageResponse.NameServers -> {
                     servers = response.nameServers
                 }
+
                 null -> return null
             }
         }
