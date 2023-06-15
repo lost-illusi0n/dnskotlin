@@ -25,7 +25,7 @@ public enum class ResourceType(public val value: Short) {
 
     public companion object {
         public fun fromValue(value: Short): ResourceType {
-            return values().find { it.value == value } ?: ResourceType.UNKNOWN
+            return values().find { it.value == value } ?: UNKNOWN
         }
     }
 }

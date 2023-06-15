@@ -81,7 +81,7 @@ publishing {
                 developers {
                     developer {
                         name.set("Marco Sitar")
-                        email.set("im@lostillusion.net")
+                        email.set("marco+oss@sitar.dev")
                     }
                 }
             }
@@ -89,10 +89,10 @@ publishing {
     }
 }
 
-//signing {
-//    useInMemoryPgpKeys(
-//        System.getenv("GPG_PRIVATE_KEY"),
-//        System.getenv("GPG_PRIVATE_PASSWORD")
-//    )
-//    sign(publishing.publications)
-//}
+signing {
+    useInMemoryPgpKeys(
+        System.getenv("GPG_PRIVATE_KEY"),
+        System.getenv("GPG_PRIVATE_PASSWORD")
+    )
+    sign(publishing.publications)
+}

@@ -1,6 +1,5 @@
 package dev.sitar.dns
 
-import dev.sitar.dns.records.NSResourceRecord
 import dev.sitar.dns.records.ResourceRecord
 import dev.sitar.kio.buffers.SequentialReader
 import dev.sitar.kio.buffers.SequentialWriter
@@ -9,7 +8,7 @@ public data class Message(
     val header: MessageHeader,
     val questions: List<MessageQuestion>,
     val answers: List<ResourceRecord>,
-    val nameServers: List<NSResourceRecord>,
+    val authoritativeRecords: List<ResourceRecord>,
     val additionalRecords: List<ResourceRecord>
 ) {
     public object Factory {
@@ -17,7 +16,7 @@ public data class Message(
             MessageHeader.Factory.marshall(output, message.header)
             message.questions.forEach { MessageQuestion.Factory.marshall(output, it) }
             message.answers.forEach { ResourceRecord.marshall(output, it) }
-            message.nameServers.forEach { ResourceRecord.marshall(output, it) }
+            message.authoritativeRecords.forEach { ResourceRecord.marshall(output, it) }
             message.additionalRecords.forEach { ResourceRecord.marshall(output, it) }
         }
 
@@ -36,9 +35,9 @@ public data class Message(
                 }
             }
 
-            val nameServers = buildList {
+            val authoritativeRecords = buildList {
                 repeat(header.nsCount.toInt()) {
-                    add(ResourceRecord.unmarshall(input) as NSResourceRecord)
+                    add(ResourceRecord.unmarshall(input))
                 }
             }
 
@@ -48,7 +47,7 @@ public data class Message(
                 }
             }
 
-            return Message(header, questions, answers, nameServers, additionalRecords)
+            return Message(header, questions, answers, authoritativeRecords, additionalRecords)
         }
     }
 }

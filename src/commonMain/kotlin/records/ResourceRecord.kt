@@ -25,7 +25,7 @@ public sealed class ResourceRecord {
 
         public fun unmarshall(input: SequentialReader): ResourceRecord {
             val name = decompressName(input)
-            val type = ResourceType.fromValue(input.readShort())!!
+            val type = ResourceType.fromValue(input.readShort())
             val `class` = ResourceClass.fromValue(input.readShort())!!
             val ttl = input.readInt()
 
@@ -44,8 +44,8 @@ public sealed class ResourceRecord {
 //                ResourceType.PTR -> TODO()
 //                ResourceType.HINFO -> TODO()
 //                ResourceType.MINFO -> TODO()
-//                ResourceType.MX -> TODO()
-//                ResourceType.TXT -> TODO()
+                ResourceType.MX -> MXResourceRecord(name, `class`, ttl, MXResourceData.unmarshall(input))
+                ResourceType.TXT -> TXTResourceRecord(name, `class`, ttl, TXTResourceData.unmarshall(input))
                 ResourceType.AAAA -> AAAAResourceRecord(name, `class`, ttl, AAAAResourceData.unmarshall(input))
                 else -> UnknownResourceRecord(name, type, `class`, ttl, UnknownResourceData.unmarshall(input))
             }
