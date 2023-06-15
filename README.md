@@ -1,5 +1,5 @@
 # dnskotlin
-[![Version](https://img.shields.io/maven-central/v/dev.sitar/kio)](https://search.maven.org/artifact/dev.sitar/dnskotlin)
+[![Version](https://img.shields.io/maven-central/v/dev.sitar/dnskotlin)](https://search.maven.org/artifact/dev.sitar/dnskotlin)
 
 A Kotlin Multiplatform DNS client.
 
