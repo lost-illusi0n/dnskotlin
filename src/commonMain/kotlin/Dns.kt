@@ -3,8 +3,8 @@ package dev.sitar.dns
 import dev.sitar.dns.records.NSResourceRecord
 import dev.sitar.dns.records.ResourceRecord
 import dev.sitar.dns.transports.CommonUdpDnsTransport
-import dev.sitar.dns.transports.DnsTransport
 import dev.sitar.dns.transports.DnsServer
+import dev.sitar.dns.transports.DnsTransport
 import dev.sitar.dns.transports.send
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
@@ -30,10 +30,15 @@ public sealed interface MessageResponse {
     public class Answers(public val answers: List<ResourceRecord>) : MessageResponse
 }
 
-public class DnsResolver(public val transport: DnsTransport) {
+public open class Dns(
+    public val transport: DnsTransport = CommonUdpDnsTransport(aSocket(SelectorManager()).udp().bind(), 100),
+    public val defaultServers: List<DnsServer> = ROOT_NAME_SERVERS
+) {
+    public companion object Default : Dns()
+
     public suspend fun resolve(
         host: String,
-        nameServers: List<DnsServer> = ROOT_NAME_SERVERS,
+        nameServers: List<DnsServer> = defaultServers,
         block: QuestionBuilder.() -> Unit = { }
     ): MessageResponse? {
         for (root in nameServers) {
@@ -57,7 +62,7 @@ public class DnsResolver(public val transport: DnsTransport) {
 
     public suspend fun resolveRecursively(
         host: String,
-        roots: List<DnsServer> = ROOT_NAME_SERVERS,
+        roots: List<DnsServer> = defaultServers,
         block: QuestionBuilder.() -> Unit = { }
     ): List<ResourceRecord>? {
         var servers = roots
@@ -78,8 +83,4 @@ public class DnsResolver(public val transport: DnsTransport) {
 
         return null
     }
-}
-
-public fun dnsResolver(): DnsResolver {
-    return DnsResolver(CommonUdpDnsTransport(aSocket(SelectorManager()).udp().bind(), 100))
 }
