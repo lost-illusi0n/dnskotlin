@@ -68,17 +68,17 @@ private sealed interface DomainPart {
 private const val LABEL_MASK = 0xc0.toByte()
 
 private fun decompressPart(input: SequentialReader): DomainPart {
-    val len = input.read().toInt()
+    val len = input.read()
 
-    when (val flag = len.toByte() and LABEL_MASK) {
+    when (len and LABEL_MASK) {
         LABEL_MASK -> {
-            val offset = (flag and LABEL_MASK.inv()).toInt() shl 8 or input.read().toUByte().toInt()
+            val offset = (len and LABEL_MASK.inv()).toInt() shl 8 or input.read().toUByte().toInt()
             return DomainPart.Pointer(offset)
         }
         0.toByte() -> {
-            if (len == 0) return DomainPart.Label.Null
+            if (len == 0.toByte()) return DomainPart.Label.Null
 
-            val text = input.readBytes(len)
+            val text = input.readBytes(len.toInt())
             return DomainPart.Label.Text(text.backingArray!!.decodeToString())
         }
         else -> error("bad flag")
