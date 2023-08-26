@@ -49,6 +49,7 @@ public sealed class ResourceRecord {
                 ResourceType.MX -> MXResourceRecord(name, `class`, ttl, MXResourceData.unmarshall(input))
                 ResourceType.TXT -> TXTResourceRecord(name, `class`, ttl, TXTResourceData.unmarshall(input))
                 ResourceType.AAAA -> AAAAResourceRecord(name, `class`, ttl, AAAAResourceData.unmarshall(input))
+                ResourceType.SRV -> SRVResourceRecord(name, `class`, ttl, SRVResourceData.unmarshall(input))
                 else -> UnknownResourceRecord(name, type, `class`, ttl, UnknownResourceData.unmarshall(input))
             }
         }

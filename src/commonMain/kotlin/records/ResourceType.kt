@@ -17,6 +17,7 @@ public enum class ResourceType(public val value: Short) {
     MINFO(14),
     MX(15),
     TXT(16),
+    SRV(33),
     AAAA(28),
     AXFR(252),
     MAILB(253),
