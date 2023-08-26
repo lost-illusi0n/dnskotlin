@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dev.sitar"
-version = "0.1.0"
+version = "0.2.0"
 
 val javadocJar = tasks.register("javadocJar", Jar::class.java) {
     archiveClassifier.set("javadoc")
