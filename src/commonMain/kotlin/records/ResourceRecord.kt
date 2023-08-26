@@ -5,6 +5,8 @@ import dev.sitar.kio.buffers.SequentialReader
 import dev.sitar.kio.buffers.SequentialWriter
 import dev.sitar.kio.buffers.readBytes
 import dev.sitar.kio.buffers.writeBytes
+import kotlin.experimental.and
+import kotlin.experimental.inv
 
 public sealed class ResourceRecord {
     public abstract val name: String
@@ -62,20 +64,23 @@ private sealed interface DomainPart {
     class Pointer(val offset: Int): DomainPart
 }
 
+private const val LABEL_MASK = 0xc0.toByte()
+
 private fun decompressPart(input: SequentialReader): DomainPart {
-    when (val flag = input.read()) {
-        0xc0.toByte() -> {
-            val offset = input.read().toUByte().toInt()
+    val len = input.read().toInt()
+
+    when (val flag = len.toByte() and LABEL_MASK) {
+        LABEL_MASK -> {
+            val offset = (flag and LABEL_MASK.inv()).toInt() shl 8 or input.read().toUByte().toInt()
             return DomainPart.Pointer(offset)
         }
-        else -> {
-            val length = flag.toInt()
+        0.toByte() -> {
+            if (len == 0) return DomainPart.Label.Null
 
-            if (length == 0) return DomainPart.Label.Null
-
-            val text = input.readBytes(length)
+            val text = input.readBytes(len)
             return DomainPart.Label.Text(text.backingArray!!.decodeToString())
         }
+        else -> error("bad flag")
     }
 }
 
