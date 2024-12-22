@@ -5,7 +5,7 @@ import dev.sitar.kio.buffers.SequentialReader
 import dev.sitar.kio.buffers.SequentialWriter
 import dev.sitar.kio.buffers.writeBytes
 
-public data class NSResourceData(public val nameServer: String): ResourceData() {
+public data class NSResourceData(public val nameServer: String) : ResourceData() {
     public companion object {
         public fun marshall(output: SequentialWriter, data: NSResourceData) {
             output.writeShort(data.nameServer.length.toShort())

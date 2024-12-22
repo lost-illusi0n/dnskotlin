@@ -8,7 +8,7 @@ import dev.sitar.kio.buffers.writeBytes
 import kotlin.experimental.and
 import kotlin.experimental.inv
 
-public data class ResourceRecord<T: ResourceData>(
+public data class ResourceRecord<T : ResourceData>(
     public val name: String,
     public val type: ResourceType,
     public val `class`: ResourceClass,
@@ -60,12 +60,12 @@ public data class ResourceRecord<T: ResourceData>(
 }
 
 private sealed interface DomainPart {
-    sealed class Label(val length: Int): DomainPart {
-        object Null: Label(0)
-        class Text(val text: String): Label(text.length)
+    sealed class Label(val length: Int) : DomainPart {
+        object Null : Label(0)
+        class Text(val text: String) : Label(text.length)
     }
 
-    class Pointer(val offset: Int): DomainPart
+    class Pointer(val offset: Int) : DomainPart
 }
 
 private const val LABEL_MASK = 0xc0.toByte()
@@ -78,12 +78,14 @@ private fun decompressPart(input: SequentialReader): DomainPart {
             val offset = (len and LABEL_MASK.inv()).toInt() shl 8 or input.read().toUByte().toInt()
             return DomainPart.Pointer(offset)
         }
+
         0.toByte() -> {
             if (len == 0.toByte()) return DomainPart.Label.Null
 
             val text = input.readBytes(len.toInt())
             return DomainPart.Label.Text(text.backingArray!!.decodeToString())
         }
+
         else -> error("bad flag")
     }
 }
@@ -95,6 +97,7 @@ internal fun decompressName(input: SequentialReader): String {
                 is DomainPart.Label.Text -> {
                     add(part.text)
                 }
+
                 is DomainPart.Pointer -> {
                     val current = input.readIndex
                     input.readIndex = part.offset
@@ -105,6 +108,7 @@ internal fun decompressName(input: SequentialReader): String {
 
                     break
                 }
+
                 DomainPart.Label.Null -> break
             }
         }

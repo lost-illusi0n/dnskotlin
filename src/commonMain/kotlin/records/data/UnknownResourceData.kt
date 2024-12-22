@@ -5,7 +5,7 @@ import dev.sitar.kio.buffers.SequentialReader
 import dev.sitar.kio.buffers.SequentialWriter
 import dev.sitar.kio.buffers.readBytes
 
-public data class UnknownResourceData(public val data: Slice): ResourceData() {
+public data class UnknownResourceData(public val data: Slice) : ResourceData() {
     public companion object {
         public fun marshall(output: SequentialWriter, data: UnknownResourceData) {
             output.writeShort(data.data.length.toShort())

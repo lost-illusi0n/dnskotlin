@@ -5,7 +5,7 @@ import dev.sitar.kio.buffers.SequentialReader
 import dev.sitar.kio.buffers.SequentialWriter
 import dev.sitar.kio.buffers.readBytes
 
-public data class AResourceData(public val address: NetworkAddress.Ipv4Address): ResourceData() {
+public data class AResourceData(public val address: NetworkAddress.Ipv4Address) : ResourceData() {
     public companion object {
         public fun marshall(output: SequentialWriter, data: AResourceData) {
             output.writeShort(4)

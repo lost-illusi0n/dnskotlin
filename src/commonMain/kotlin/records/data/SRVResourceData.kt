@@ -10,7 +10,7 @@ public data class SRVResourceData(
     val weight: UShort,
     val port: UShort,
     val target: String
-): ResourceData() {
+) : ResourceData() {
     public companion object {
         public fun marshall(output: SequentialWriter, data: SRVResourceData) {
             output.writeShort(data.priority.toShort())

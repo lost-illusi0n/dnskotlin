@@ -5,7 +5,7 @@ import dev.sitar.kio.buffers.SequentialReader
 import dev.sitar.kio.buffers.SequentialWriter
 import dev.sitar.kio.buffers.writeBytes
 
-public data class MXResourceData(val preference: Short, val exchange: String): ResourceData() {
+public data class MXResourceData(val preference: Short, val exchange: String) : ResourceData() {
     public companion object {
         public fun marshall(output: SequentialWriter, data: MXResourceData) {
             output.writeShort(data.preference)
