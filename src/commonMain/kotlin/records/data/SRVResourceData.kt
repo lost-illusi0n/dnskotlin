@@ -1,13 +1,9 @@
 package dev.sitar.dns.records.data
 
-import dev.sitar.dns.records.ResourceClass
-import dev.sitar.dns.records.ResourceType
 import dev.sitar.dns.records.decompressName
-import dev.sitar.kio.async.readers.AsyncReader
-import dev.sitar.kio.buffers.*
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
+import dev.sitar.kio.buffers.SequentialReader
+import dev.sitar.kio.buffers.SequentialWriter
+import dev.sitar.kio.buffers.writeBytes
 
 public data class SRVResourceData(
     val priority: UShort,

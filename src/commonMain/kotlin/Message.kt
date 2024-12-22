@@ -7,9 +7,9 @@ import dev.sitar.kio.buffers.SequentialWriter
 public data class Message(
     val header: MessageHeader,
     val questions: List<MessageQuestion>,
-    val answers: List<ResourceRecord>,
-    val authoritativeRecords: List<ResourceRecord>,
-    val additionalRecords: List<ResourceRecord>
+    val answers: List<ResourceRecord<*>>,
+    val authoritativeRecords: List<ResourceRecord<*>>,
+    val additionalRecords: List<ResourceRecord<*>>
 ) {
     public object Factory {
         public fun marshall(output: SequentialWriter, message: Message) {

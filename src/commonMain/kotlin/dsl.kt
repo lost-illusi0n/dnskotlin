@@ -1,9 +1,9 @@
 package dev.sitar.dns
 
-import dev.sitar.dns.records.NSResourceRecord
 import dev.sitar.dns.records.ResourceClass
 import dev.sitar.dns.records.ResourceRecord
 import dev.sitar.dns.records.ResourceType
+import dev.sitar.dns.records.data.NSResourceData
 import kotlin.random.Random
 
 public class MessageBuilder {
@@ -16,9 +16,9 @@ public class MessageBuilder {
     public var rCode: ResponseCode = ResponseCode.NoError
 
     public val questions: MutableList<MessageQuestion> = mutableListOf()
-    public val answers: MutableList<ResourceRecord> = mutableListOf()
-    public val nameServers: MutableList<NSResourceRecord> = mutableListOf()
-    public val additionalRecords: MutableList<ResourceRecord> = mutableListOf()
+    public val answers: MutableList<ResourceRecord<*>> = mutableListOf()
+    public val nameServers: MutableList<ResourceRecord<NSResourceData>> = mutableListOf()
+    public val additionalRecords: MutableList<ResourceRecord<*>> = mutableListOf()
 
     public fun query(op: Op = Op.Query, recursive: Boolean = true) {
         qr = false

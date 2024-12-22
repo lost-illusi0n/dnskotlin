@@ -8,15 +8,15 @@ import dev.sitar.kio.buffers.writeBytes
 import kotlin.experimental.and
 import kotlin.experimental.inv
 
-public sealed class ResourceRecord {
-    public abstract val name: String
-    public abstract val type: ResourceType
-    public abstract val `class`: ResourceClass
-    public abstract val ttl: Int
-    public abstract val data: ResourceData
-
+public data class ResourceRecord<T: ResourceData>(
+    public val name: String,
+    public val type: ResourceType,
+    public val `class`: ResourceClass,
+    public val ttl: Int,
+    public val data: T
+) {
     public companion object {
-        public fun marshall(output: SequentialWriter, record: ResourceRecord) {
+        public fun marshall(output: SequentialWriter, record: ResourceRecord<*>) {
             output.writeBytes((record.name + Char(0)).encodeToByteArray())
             output.writeShort(record.type.value)
             output.writeShort(record.`class`.value)
@@ -25,15 +25,16 @@ public sealed class ResourceRecord {
             record.data.marshall(output)
         }
 
-        public fun unmarshall(input: SequentialReader): ResourceRecord {
+
+        public fun unmarshall(input: SequentialReader): ResourceRecord<*> {
             val name = decompressName(input)
             val type = ResourceType.fromValue(input.readShort())
             val `class` = ResourceClass.fromValue(input.readShort())!!
             val ttl = input.readInt()
 
-            return when (type) {
-                ResourceType.A -> AResourceRecord(name, `class`, ttl, AResourceData.unmarshall(input))
-                ResourceType.NS -> NSResourceRecord(name, `class`, ttl, NSResourceData.unmarshall(input))
+            val data = when (type) {
+                ResourceType.A -> AResourceData.unmarshall(input)
+                ResourceType.NS -> NSResourceData.unmarshall(input)
 //                ResourceType.MD -> TODO()
 //                ResourceType.MF -> TODO()
 //                ResourceType.CNAME -> TODO()
@@ -46,12 +47,14 @@ public sealed class ResourceRecord {
 //                ResourceType.PTR -> TODO()
 //                ResourceType.HINFO -> TODO()
 //                ResourceType.MINFO -> TODO()
-                ResourceType.MX -> MXResourceRecord(name, `class`, ttl, MXResourceData.unmarshall(input))
-                ResourceType.TXT -> TXTResourceRecord(name, `class`, ttl, TXTResourceData.unmarshall(input))
-                ResourceType.AAAA -> AAAAResourceRecord(name, `class`, ttl, AAAAResourceData.unmarshall(input))
-                ResourceType.SRV -> SRVResourceRecord(name, `class`, ttl, SRVResourceData.unmarshall(input))
-                else -> UnknownResourceRecord(name, type, `class`, ttl, UnknownResourceData.unmarshall(input))
+                ResourceType.MX -> MXResourceData.unmarshall(input)
+                ResourceType.TXT -> TXTResourceData.unmarshall(input)
+                ResourceType.AAAA -> AAAAResourceData.unmarshall(input)
+                ResourceType.SRV -> SRVResourceData.unmarshall(input)
+                else -> UnknownResourceData.unmarshall(input)
             }
+
+            return ResourceRecord(name, type, `class`, ttl, data)
         }
     }
 }

@@ -1,7 +1,8 @@
 package dev.sitar.dns
 
-import dev.sitar.dns.records.NSResourceRecord
 import dev.sitar.dns.records.ResourceRecord
+import dev.sitar.dns.records.data.NSResourceData
+import dev.sitar.dns.records.data.ResourceData
 import dev.sitar.dns.transports.CommonUdpDnsTransport
 import dev.sitar.dns.transports.DnsServer
 import dev.sitar.dns.transports.DnsTransport
@@ -27,7 +28,7 @@ public val ROOT_NAME_SERVERS: List<DnsServer> = listOf(
 
 public sealed interface MessageResponse {
     public class NameServers(public val nameServers: List<DnsServer>) : MessageResponse
-    public class Answers(public val answers: List<ResourceRecord>) : MessageResponse
+    public class Answers(public val answers: List<ResourceRecord<*>>) : MessageResponse
 }
 
 public open class Dns(
@@ -41,8 +42,8 @@ public open class Dns(
         nameServers: List<DnsServer> = defaultServers,
         block: QuestionBuilder.() -> Unit = { }
     ): MessageResponse? {
-        for (root in nameServers) {
-            val response = transport.send(root) {
+        for (server in nameServers) {
+            val response = transport.send(server) {
                 question(host, block)
             } ?: continue
 
@@ -52,7 +53,11 @@ public open class Dns(
                 }
 
                 response.authoritativeRecords.isNotEmpty() -> {
-                    return MessageResponse.NameServers(response.authoritativeRecords.filterIsInstance<NSResourceRecord>().map { DnsServer(it.data.nameServer, 53) })
+                    val servers = response.authoritativeRecords
+                        .filterIsInstance<ResourceRecord<NSResourceData>>()
+                        .map { DnsServer(it.data.nameServer) }
+
+                    return MessageResponse.NameServers(servers)
                 }
             }
         }
@@ -64,23 +69,27 @@ public open class Dns(
         host: String,
         roots: List<DnsServer> = defaultServers,
         block: QuestionBuilder.() -> Unit = { }
-    ): List<ResourceRecord>? {
-        var servers = roots
+    ): List<ResourceRecord<*>> {
+        for (root in roots) {
+            var servers = roots
 
-        while (servers.isNotEmpty()) {
-            when (val response = resolve(host, servers, block)) {
-                is MessageResponse.Answers -> {
-                    return response.answers
+            while (servers.isNotEmpty()) {
+                when (val response = resolve(host, servers, block)) {
+                    is MessageResponse.Answers -> {
+                        return response.answers
+                    }
+
+                    is MessageResponse.NameServers -> {
+                        servers = response.nameServers
+                    }
+
+                    null -> return emptyList()
                 }
-
-                is MessageResponse.NameServers -> {
-                    servers = response.nameServers
-                }
-
-                null -> return null
             }
         }
 
-        return null
+        return emptyList()
     }
 }
+
+public val List<ResourceRecord<*>>.data: List<ResourceData> get() = map { it.data }
