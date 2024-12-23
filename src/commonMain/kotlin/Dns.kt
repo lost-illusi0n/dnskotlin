@@ -5,6 +5,8 @@ import dev.sitar.dns.records.data.NSResourceData
 import dev.sitar.dns.records.data.ResourceData
 import dev.sitar.dns.transports.*
 import io.ktor.client.*
+import io.ktor.client.engine.*
+import io.ktor.client.engine.cio.*
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import kotlinx.coroutines.runBlocking
@@ -97,7 +99,8 @@ public open class Dns(
 
 private const val DEFAULT_TIMEOUT: Long = 1000
 
-private val DEFAULT_CLIENT = HttpClient()
+internal expect val DEFAULT_ENGINE: HttpClientEngine
+private val DEFAULT_CLIENT = HttpClient(DEFAULT_ENGINE)
 
 public const val CLOUDFLARE_DOH_SERVER: String = "https://cloudflare-dns.com"
 

@@ -10,9 +10,11 @@ implementation("dev.sitar:dnskotlin:{version}")
 ```
 
 ## What?
-There are many DNS records to be resolved, and many platforms that they need to be resolved on. This library provides a basic client implementation of the [DNS protocol](https://www.ietf.org/rfc/rfc1035.txt). 
+There are many DNS records to be resolved, and many platforms that they need to be resolved on. This library is a client implementation of the [DNS protocol](https://www.ietf.org/rfc/rfc1035.txt). 
 
 Supports HTTPS (DoH) and UDP transports.
+
+Supports the JVM, Linux, and Windows platforms.
 
 Further implementation of the protocol, or support for additional platforms are added when needed (make an issue if something you need is missing).
 

@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dev.sitar"
-version = "0.5.0"
+version = "0.5.1"
 
 val javadocJar = tasks.register("javadocJar", Jar::class.java) {
     archiveClassifier.set("javadoc")
@@ -29,13 +29,28 @@ kotlin {
 
     jvm()
     linuxX64()
+    mingwX64()
+
+    applyDefaultHierarchyTemplate()
 
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api("io.ktor:ktor-network:3.0.3")
-                implementation("io.ktor:ktor-client-core:3.0.3")
-                implementation("io.ktor:ktor-client-cio:3.0.3")
+                api("io.ktor:ktor-network:3.0.2")
+                implementation("io.ktor:ktor-client-core:3.0.2")
+                implementation("io.ktor:ktor-client-cio:3.0.2")
+            }
+        }
+
+        val jvmMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-java:3.0.2")
+            }
+        }
+
+        val nativeMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-curl:3.0.2")
             }
         }
     }
