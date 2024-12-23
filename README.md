@@ -1,7 +1,7 @@
 # dnskotlin
 [![Version](https://img.shields.io/maven-central/v/dev.sitar/dnskotlin)](https://search.maven.org/artifact/dev.sitar/dnskotlin)
 
-A Kotlin Multiplatform DNS client.
+An intuitive Kotlin Multiplatform DNS client.
 
 ## Dependency
 `dnskotlin` releases are published to Maven Central (soon). Replace `{version}` with the latest version of `dnskotlin`.
@@ -10,16 +10,18 @@ implementation("dev.sitar:dnskotlin:{version}")
 ```
 
 ## What?
-There are many DNS records to be resolved, and many platforms that they need to be resolved on. This library provides a basic client implementation for the [DNS protocol](https://www.ietf.org/rfc/rfc1035.txt). 
+There are many DNS records to be resolved, and many platforms that they need to be resolved on. This library provides a basic client implementation of the [DNS protocol](https://www.ietf.org/rfc/rfc1035.txt). 
+
+Supports HTTPS (DoH) and UDP transports.
 
 Further implementation of the protocol, or support for additional platforms are added when needed (make an issue if something you need is missing).
 
 ## Example
 ```kotlin
-// default global dns resolver
+// default global dns resolver (uses udp)
 val dns = Dns
-// or your own resolver
-val dns = Dns(defaultServers = listOf(DnsServer("8.8.8.8")))
+// or your own resolver with any supported transport.
+val dns = dohDns(request = DohRequest.Post)
 
 // retrieve mx records
 val servers = dns.resolveRecursively("gmail.com") { qType = ResourceType.MX }

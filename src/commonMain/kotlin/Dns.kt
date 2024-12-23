@@ -3,14 +3,13 @@ package dev.sitar.dns
 import dev.sitar.dns.records.ResourceRecord
 import dev.sitar.dns.records.data.NSResourceData
 import dev.sitar.dns.records.data.ResourceData
-import dev.sitar.dns.transports.CommonUdpDnsTransport
-import dev.sitar.dns.transports.DnsServer
-import dev.sitar.dns.transports.DnsTransport
-import dev.sitar.dns.transports.send
+import dev.sitar.dns.transports.*
+import io.ktor.client.*
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
+import kotlinx.coroutines.runBlocking
 
-public val ROOT_NAME_SERVERS: List<DnsServer> = listOf(
+public val ROOT_NAME_SERVERS: List<String> = listOf(
     "a.root-servers.net",
     "b.root-servers.net",
     "c.root-servers.net",
@@ -24,7 +23,7 @@ public val ROOT_NAME_SERVERS: List<DnsServer> = listOf(
     "k.root-servers.net",
     "l.root-servers.net",
     "m.root-servers.net",
-).map { DnsServer(it) }
+)
 
 public sealed interface MessageResponse {
     public class NameServers(public val nameServers: List<DnsServer>) : MessageResponse
@@ -32,10 +31,14 @@ public sealed interface MessageResponse {
 }
 
 public open class Dns(
-    public val transport: DnsTransport = CommonUdpDnsTransport(aSocket(SelectorManager()).udp().bind(), 100),
-    public val defaultServers: List<DnsServer> = ROOT_NAME_SERVERS
+    public val transport: DnsTransport,
+    public val defaultServers: List<DnsServer>
 ) {
-    public companion object Default : Dns()
+    public companion object Default :
+        Dns(
+            CommonUdpDnsTransport(DEFAULT_SOCKET, DEFAULT_TIMEOUT),
+            defaultServers = ROOT_NAME_SERVERS.map { DnsServer(it, TRANSPORT_DNS_PORT) }
+        )
 
     public suspend fun resolve(
         host: String,
@@ -53,9 +56,9 @@ public open class Dns(
                 }
 
                 response.authoritativeRecords.isNotEmpty() -> {
-                    val servers = response.authoritativeRecords
-                        .filterIsInstance<ResourceRecord<NSResourceData>>()
-                        .map { DnsServer(it.data.nameServer) }
+                    val servers = response.authoritativeRecords.data
+                        .filterIsInstance<NSResourceData>()
+                        .map { DnsServer(it.nameServer, server.port) }
 
                     return MessageResponse.NameServers(servers)
                 }
@@ -91,5 +94,40 @@ public open class Dns(
         return emptyList()
     }
 }
+
+private const val DEFAULT_TIMEOUT: Long = 1000
+
+private val DEFAULT_CLIENT = HttpClient()
+
+public const val CLOUDFLARE_DOH_SERVER: String = "https://cloudflare-dns.com"
+
+/**
+ * @param servers DoH-compatible servers. They should include a scheme. e.g., https://cloudflare-dns.com.
+ */
+public fun dohDns(
+    vararg servers: String = arrayOf(CLOUDFLARE_DOH_SERVER),
+    client: HttpClient = DEFAULT_CLIENT,
+    request: DohRequest = DohRequest.Post,
+    timeout: Long = DEFAULT_TIMEOUT
+): Dns {
+    return Dns(
+        CommonHttpDnsTransport(client, request, timeout),
+        defaultServers = servers.map { DnsServer(it, APPLICATION_DNS_PORT) }
+    )
+}
+
+private val DEFAULT_SOCKET = runBlocking { aSocket(SelectorManager()).udp().bind() }
+
+public fun udpDns(
+    vararg servers: String,
+    socket: BoundDatagramSocket = DEFAULT_SOCKET,
+    timeout: Long = DEFAULT_TIMEOUT
+): Dns {
+    return Dns(
+        CommonUdpDnsTransport(socket, timeout),
+        defaultServers = servers.map { DnsServer(it, TRANSPORT_DNS_PORT) }
+    )
+}
+
 
 public val List<ResourceRecord<*>>.data: List<ResourceData> get() = map { it.data }

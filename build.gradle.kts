@@ -1,11 +1,11 @@
 plugins {
-    kotlin("multiplatform") version "1.7.10"
+    kotlin("multiplatform") version "2.1.0"
     id("maven-publish")
     id("signing")
 }
 
 group = "dev.sitar"
-version = "0.3.0"
+version = "0.4.0"
 
 val javadocJar = tasks.register("javadocJar", Jar::class.java) {
     archiveClassifier.set("javadoc")
@@ -35,9 +35,9 @@ kotlin {
             dependencies {
                 implementation("dev.sitar:kio:1.1.0")
 
-                api("io.ktor:ktor-network:2.1.1")
-                implementation("io.ktor:ktor-client-core:2.1.1")
-                implementation("io.ktor:ktor-client-cio:2.1.1")
+                api("io.ktor:ktor-network:3.0.3")
+                implementation("io.ktor:ktor-client-core:3.0.3")
+                implementation("io.ktor:ktor-client-cio:3.0.3")
             }
         }
     }
