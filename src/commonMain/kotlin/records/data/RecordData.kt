@@ -1,7 +1,7 @@
 package dev.sitar.dns.records.data
 
-import dev.sitar.kio.buffers.SequentialWriter
+import kotlinx.io.Sink
 
 public sealed class ResourceData {
-    public abstract fun marshall(output: SequentialWriter)
+    public abstract fun marshall(output: Sink)
 }

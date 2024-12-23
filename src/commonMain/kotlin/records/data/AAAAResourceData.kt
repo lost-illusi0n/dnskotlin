@@ -1,24 +1,25 @@
 package dev.sitar.dns.records.data
 
+import dev.sitar.dns.MessageReadScope
 import dev.sitar.dns.utils.NetworkAddress
-import dev.sitar.kio.buffers.SequentialReader
-import dev.sitar.kio.buffers.SequentialWriter
-import dev.sitar.kio.buffers.readBytes
+import kotlinx.io.Sink
+import kotlinx.io.Source
+import kotlinx.io.readByteArray
 
 public data class AAAAResourceData(public val address: NetworkAddress.Ipv6Address) : ResourceData() {
     public companion object {
-        public fun marshall(output: SequentialWriter, data: AAAAResourceData) {
+        public fun marshall(output: Sink, data: AAAAResourceData) {
             output.writeShort(16)
-            output.writeBytes(data.address.data)
+            output.write(data.address.data)
         }
 
-        public fun unmarshall(input: SequentialReader): AAAAResourceData {
+        public fun unmarshall(input: Source): AAAAResourceData {
             require(input.readShort() == 16.toShort())
-            return AAAAResourceData(NetworkAddress.Ipv6Address(input.readBytes(16).fullSlice()))
+            return AAAAResourceData(NetworkAddress.Ipv6Address(input.readByteArray(16)))
         }
     }
 
-    override fun marshall(output: SequentialWriter) {
+    override fun marshall(output: Sink) {
         marshall(output, this)
     }
 }

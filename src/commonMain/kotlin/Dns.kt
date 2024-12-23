@@ -36,7 +36,7 @@ public open class Dns(
 ) {
     public companion object Default :
         Dns(
-            CommonUdpDnsTransport(DEFAULT_SOCKET, DEFAULT_TIMEOUT),
+            CommonUdpDnsTransport(DEFAULT_UDP_SOCKET, DEFAULT_TIMEOUT),
             defaultServers = ROOT_NAME_SERVERS.map { DnsServer(it, TRANSPORT_DNS_PORT) }
         )
 
@@ -116,11 +116,11 @@ public fun dohDns(
     )
 }
 
-private val DEFAULT_SOCKET = runBlocking { aSocket(SelectorManager()).udp().bind() }
+private val DEFAULT_UDP_SOCKET = runBlocking { aSocket(SelectorManager()).udp().bind() }
 
 public fun udpDns(
-    vararg servers: String,
-    socket: BoundDatagramSocket = DEFAULT_SOCKET,
+    vararg servers: String = ROOT_NAME_SERVERS.toTypedArray(),
+    socket: BoundDatagramSocket = DEFAULT_UDP_SOCKET,
     timeout: Long = DEFAULT_TIMEOUT
 ): Dns {
     return Dns(
@@ -128,6 +128,5 @@ public fun udpDns(
         defaultServers = servers.map { DnsServer(it, TRANSPORT_DNS_PORT) }
     )
 }
-
 
 public val List<ResourceRecord<*>>.data: List<ResourceData> get() = map { it.data }

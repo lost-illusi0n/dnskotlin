@@ -1,10 +1,8 @@
 package dev.sitar.dns.records
 
+import dev.sitar.dns.MessageReadScope
 import dev.sitar.dns.records.data.*
-import dev.sitar.kio.buffers.SequentialReader
-import dev.sitar.kio.buffers.SequentialWriter
-import dev.sitar.kio.buffers.readBytes
-import dev.sitar.kio.buffers.writeBytes
+import kotlinx.io.*
 import kotlin.experimental.and
 import kotlin.experimental.inv
 
@@ -16,8 +14,8 @@ public data class ResourceRecord<T : ResourceData>(
     public val data: T
 ) {
     public companion object {
-        public fun marshall(output: SequentialWriter, record: ResourceRecord<*>) {
-            output.writeBytes((record.name + Char(0)).encodeToByteArray())
+        public fun marshall(output: Sink, record: ResourceRecord<*>) {
+            output.writeString(record.name + Char(0))
             output.writeShort(record.type.value)
             output.writeShort(record.`class`.value)
             output.writeInt(record.ttl)
@@ -26,15 +24,15 @@ public data class ResourceRecord<T : ResourceData>(
         }
 
 
-        public fun unmarshall(input: SequentialReader): ResourceRecord<*> {
-            val name = decompressName(input)
+        public fun unmarshall(scope: MessageReadScope): ResourceRecord<*> = scope {
+            val name = decompressName(child())
             val type = ResourceType.fromValue(input.readShort())
             val `class` = ResourceClass.fromValue(input.readShort())!!
             val ttl = input.readInt()
 
             val data = when (type) {
                 ResourceType.A -> AResourceData.unmarshall(input)
-                ResourceType.NS -> NSResourceData.unmarshall(input)
+                ResourceType.NS -> NSResourceData.unmarshall(child())
 //                ResourceType.MD -> TODO()
 //                ResourceType.MF -> TODO()
 //                ResourceType.CNAME -> TODO()
@@ -47,10 +45,10 @@ public data class ResourceRecord<T : ResourceData>(
 //                ResourceType.PTR -> TODO()
 //                ResourceType.HINFO -> TODO()
 //                ResourceType.MINFO -> TODO()
-                ResourceType.MX -> MXResourceData.unmarshall(input)
+                ResourceType.MX -> MXResourceData.unmarshall(child())
                 ResourceType.TXT -> TXTResourceData.unmarshall(input)
                 ResourceType.AAAA -> AAAAResourceData.unmarshall(input)
-                ResourceType.SRV -> SRVResourceData.unmarshall(input)
+                ResourceType.SRV -> SRVResourceData.unmarshall(child())
                 else -> UnknownResourceData.unmarshall(input)
             }
 
@@ -61,7 +59,7 @@ public data class ResourceRecord<T : ResourceData>(
 
 private sealed interface DomainPart {
     sealed class Label(val length: Int) : DomainPart {
-        object Null : Label(0)
+        data object Null : Label(0)
         class Text(val text: String) : Label(text.length)
     }
 
@@ -70,27 +68,26 @@ private sealed interface DomainPart {
 
 private const val LABEL_MASK = 0xc0.toByte()
 
-private fun decompressPart(input: SequentialReader): DomainPart {
-    val len = input.read()
+private fun decompressPart(input: Source): DomainPart {
+    val len = input.readByte()
 
     when (len and LABEL_MASK) {
         LABEL_MASK -> {
-            val offset = (len and LABEL_MASK.inv()).toInt() shl 8 or input.read().toUByte().toInt()
+            val offset = (len and LABEL_MASK.inv()).toInt() shl 8 or input.readByte().toUByte().toInt()
             return DomainPart.Pointer(offset)
         }
 
         0.toByte() -> {
             if (len == 0.toByte()) return DomainPart.Label.Null
 
-            val text = input.readBytes(len.toInt())
-            return DomainPart.Label.Text(text.backingArray!!.decodeToString())
+            return DomainPart.Label.Text(input.readString(len.toLong()))
         }
 
         else -> error("bad flag")
     }
 }
 
-internal fun decompressName(input: SequentialReader): String {
+internal fun decompressName(scope: MessageReadScope): String = scope {
     return buildList {
         while (true) {
             when (val part = decompressPart(input)) {
@@ -99,12 +96,11 @@ internal fun decompressName(input: SequentialReader): String {
                 }
 
                 is DomainPart.Pointer -> {
-                    val current = input.readIndex
-                    input.readIndex = part.offset
+                    val pointerSource = readSource.peek()
 
-                    add(decompressName(input))
+                    pointerSource.skip(part.offset.toLong())
 
-                    input.readIndex = current
+                    add(decompressName(child(current = pointerSource)))
 
                     break
                 }

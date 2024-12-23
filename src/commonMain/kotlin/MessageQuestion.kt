@@ -2,10 +2,9 @@ package dev.sitar.dns
 
 import dev.sitar.dns.records.ResourceClass
 import dev.sitar.dns.records.ResourceType
-import dev.sitar.kio.buffers.SequentialReader
-import dev.sitar.kio.buffers.SequentialWriter
-import dev.sitar.kio.buffers.readBytes
-import dev.sitar.kio.buffers.writeBytes
+import kotlinx.io.Sink
+import kotlinx.io.Source
+import kotlinx.io.readString
 
 public data class MessageQuestion(
     val qName: String,
@@ -13,26 +12,25 @@ public data class MessageQuestion(
     val qClass: ResourceClass
 ) {
     public object Factory {
-        public fun marshall(output: SequentialWriter, question: MessageQuestion) {
+        public fun marshall(output: Sink, question: MessageQuestion) {
             question.qName.split('.').forEach {
-                output.write(it.length.toByte())
-                output.writeBytes(it.encodeToByteArray())
+                output.writeByte(it.length.toByte())
+                output.write(it.encodeToByteArray())
             }
 
-            output.write(0)
+            output.writeByte(0)
 
             output.writeShort(question.qType.value)
             output.writeShort(question.qClass.value)
         }
 
-        // TODO: we can use buffers probably to optimize domain name reading
-        public fun unmarshall(input: SequentialReader): MessageQuestion {
-            var length = input.read().toInt()
+        public fun unmarshall(input: Source): MessageQuestion {
+            var length = input.readByte().toInt()
 
             val qName = buildString {
                 while (length != 0) {
-                    append(input.readBytes(length).toByteArray().decodeToString())
-                    length = input.read().toInt()
+                    append(input.readString(length.toLong()))
+                    length = input.readByte().toInt()
                     if (length != 0) append('.')
                 }
             }

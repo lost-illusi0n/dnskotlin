@@ -1,13 +1,13 @@
 package dev.sitar.dns.transports
 
 import dev.sitar.dns.Message
-import dev.sitar.kio.buffers.DefaultBufferPool
-import dev.sitar.kio.buffers.asBuffer
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.io.Buffer
+import kotlinx.io.readByteArray
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
@@ -24,15 +24,14 @@ public class CommonHttpDnsTransport(
 ) : DnsTransport {
     @OptIn(ExperimentalEncodingApi::class)
     override suspend fun send(to: DnsServer, message: Message): Message? {
-        val data = DefaultBufferPool.acquire(12)
+        val data = Buffer()
+
         Message.Factory.marshall(data, message)
 
         val rsp = withTimeoutOrNull(timeout) {
             when (request) {
                 DohRequest.Get -> {
-                    val (arr, start, n) = data.fullSlice()
-
-                    val payload = Base64.UrlSafe.withPadding(Base64.PaddingOption.ABSENT).encode(arr, start, start + n)
+                    val payload = Base64.UrlSafe.withPadding(Base64.PaddingOption.ABSENT).encode(data.readByteArray())
 
                     client.get {
                         url {
@@ -56,20 +55,24 @@ public class CommonHttpDnsTransport(
                         contentType(DNS_MESSAGE)
                         accept(DNS_MESSAGE)
 
-                        setBody(data.toByteArray())
+                        setBody(data.readByteArray())
                     }
                 }
             }
         }
 
-        DefaultBufferPool.recycle(data)
-
         if (rsp == null) return null
 
         require(rsp.contentType() == DNS_MESSAGE)
 
-        val payload = rsp.readRawBytes().asBuffer()
+        val payload = Buffer()
+        payload.write(rsp.readRawBytes())
 
-        return Message.Factory.unmarshall(payload)
+        val msg = Message.Factory.unmarshall(payload)
+
+        require(msg.header.id == message.header.id)
+        require(msg.header.qr)
+
+        return msg
     }
 }

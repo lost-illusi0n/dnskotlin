@@ -1,9 +1,8 @@
 package dev.sitar.dns.records.data
 
+import dev.sitar.dns.MessageReadScope
 import dev.sitar.dns.records.decompressName
-import dev.sitar.kio.buffers.SequentialReader
-import dev.sitar.kio.buffers.SequentialWriter
-import dev.sitar.kio.buffers.writeBytes
+import kotlinx.io.Sink
 
 public data class SRVResourceData(
     val priority: UShort,
@@ -12,28 +11,28 @@ public data class SRVResourceData(
     val target: String
 ) : ResourceData() {
     public companion object {
-        public fun marshall(output: SequentialWriter, data: SRVResourceData) {
+        public fun marshall(output: Sink, data: SRVResourceData) {
             output.writeShort(data.priority.toShort())
             output.writeShort(data.weight.toShort())
             output.writeShort(data.port.toShort())
             output.writeShort(data.target.length.toShort())
-            output.writeBytes(data.target.encodeToByteArray())
+            output.write(data.target.encodeToByteArray())
         }
 
-        public fun unmarshall(input: SequentialReader): SRVResourceData {
+        public fun unmarshall(scope: MessageReadScope): SRVResourceData = scope {
             input.readShort()
 
             val priority = input.readShort().toUShort()
             val weight = input.readShort().toUShort()
             val port = input.readShort().toUShort()
 
-            val target = decompressName(input)
+            val target = decompressName(child())
 
             return SRVResourceData(priority, weight, port, target)
         }
     }
 
-    override fun marshall(output: SequentialWriter) {
+    override fun marshall(output: Sink) {
         marshall(output, this)
     }
 }

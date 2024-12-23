@@ -1,24 +1,23 @@
 package dev.sitar.dns.records.data
 
+import dev.sitar.dns.MessageReadScope
 import dev.sitar.dns.records.decompressName
-import dev.sitar.kio.buffers.SequentialReader
-import dev.sitar.kio.buffers.SequentialWriter
-import dev.sitar.kio.buffers.writeBytes
+import kotlinx.io.Sink
 
 public data class NSResourceData(public val nameServer: String) : ResourceData() {
     public companion object {
-        public fun marshall(output: SequentialWriter, data: NSResourceData) {
+        public fun marshall(output: Sink, data: NSResourceData) {
             output.writeShort(data.nameServer.length.toShort())
-            output.writeBytes(data.nameServer.encodeToByteArray())
+            output.write(data.nameServer.encodeToByteArray())
         }
 
-        public fun unmarshall(input: SequentialReader): NSResourceData {
+        public fun unmarshall(scope: MessageReadScope): NSResourceData = scope {
             input.readShort() // length
-            return NSResourceData(decompressName(input))
+            return NSResourceData(decompressName(child()))
         }
     }
 
-    override fun marshall(output: SequentialWriter) {
+    override fun marshall(output: Sink) {
         marshall(output, this)
     }
 }

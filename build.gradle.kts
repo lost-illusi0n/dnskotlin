@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dev.sitar"
-version = "0.4.0"
+version = "0.5.0"
 
 val javadocJar = tasks.register("javadocJar", Jar::class.java) {
     archiveClassifier.set("javadoc")
@@ -33,8 +33,6 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("dev.sitar:kio:1.1.0")
-
                 api("io.ktor:ktor-network:3.0.3")
                 implementation("io.ktor:ktor-client-core:3.0.3")
                 implementation("io.ktor:ktor-client-cio:3.0.3")

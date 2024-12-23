@@ -1,8 +1,17 @@
 package dev.sitar.dns
 
 import dev.sitar.dns.records.ResourceRecord
-import dev.sitar.kio.buffers.SequentialReader
-import dev.sitar.kio.buffers.SequentialWriter
+import kotlinx.io.Buffer
+import kotlinx.io.Sink
+import kotlinx.io.Source
+
+public data class MessageReadScope(val input: Source, val readSource: Source) {
+    public fun child(current: Source = input): MessageReadScope = MessageReadScope(current, readSource.peek())
+
+    public inline operator fun <T> invoke(block: MessageReadScope.() -> T): T {
+        return block(this)
+    }
+}
 
 public data class Message(
     val header: MessageHeader,
@@ -12,7 +21,7 @@ public data class Message(
     val additionalRecords: List<ResourceRecord<*>>
 ) {
     public object Factory {
-        public fun marshall(output: SequentialWriter, message: Message) {
+        public fun marshall(output: Sink, message: Message) {
             MessageHeader.Factory.marshall(output, message.header)
             message.questions.forEach { MessageQuestion.Factory.marshall(output, it) }
             message.answers.forEach { ResourceRecord.marshall(output, it) }
@@ -20,30 +29,37 @@ public data class Message(
             message.additionalRecords.forEach { ResourceRecord.marshall(output, it) }
         }
 
-        public fun unmarshall(input: SequentialReader): Message {
-            val header = MessageHeader.Factory.unmarshall(input)
+        public fun unmarshall(input: Source): Message {
+            val base = Buffer()
+            base.transferFrom(input)
+
+            val current = base.peek()
+
+            val header = MessageHeader.Factory.unmarshall(current)
 
             val questions = buildList {
                 repeat(header.qdCount.toInt()) {
-                    add(MessageQuestion.Factory.unmarshall(input))
+                    add(MessageQuestion.Factory.unmarshall(current))
                 }
             }
 
+            val scope = MessageReadScope(current, base.peek())
+
             val answers = buildList {
                 repeat(header.anCount.toInt()) {
-                    add(ResourceRecord.unmarshall(input))
+                    add(ResourceRecord.unmarshall(scope.child()))
                 }
             }
 
             val authoritativeRecords = buildList {
                 repeat(header.nsCount.toInt()) {
-                    add(ResourceRecord.unmarshall(input))
+                    add(ResourceRecord.unmarshall(scope.child()))
                 }
             }
 
             val additionalRecords = buildList {
                 repeat(header.arCount.toInt()) {
-                    add(ResourceRecord.unmarshall(input))
+                    add(ResourceRecord.unmarshall(scope.child()))
                 }
             }
 

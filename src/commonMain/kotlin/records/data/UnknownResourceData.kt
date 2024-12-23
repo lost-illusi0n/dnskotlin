@@ -1,25 +1,26 @@
 package dev.sitar.dns.records.data
 
-import dev.sitar.kio.Slice
-import dev.sitar.kio.buffers.SequentialReader
-import dev.sitar.kio.buffers.SequentialWriter
-import dev.sitar.kio.buffers.readBytes
+import dev.sitar.dns.MessageReadScope
+import io.ktor.utils.io.core.*
+import kotlinx.io.Sink
+import kotlinx.io.Source
+import kotlinx.io.readByteArray
 
-public data class UnknownResourceData(public val data: Slice) : ResourceData() {
+public class UnknownResourceData(public val data: ByteArray) : ResourceData() {
     public companion object {
-        public fun marshall(output: SequentialWriter, data: UnknownResourceData) {
-            output.writeShort(data.data.length.toShort())
-            output.writeBytes(data.data)
+        public fun marshall(output: Sink, data: UnknownResourceData) {
+            output.writeShort(data.data.size.toShort())
+            output.write(data.data)
         }
 
-        public fun unmarshall(input: SequentialReader): UnknownResourceData {
+        public fun unmarshall(input: Source): UnknownResourceData {
             val length = input.readShort()
-            val data = input.readBytes(length.toInt())
-            return UnknownResourceData(data.fullSlice())
+            val data = input.readByteArray(length.toInt())
+            return UnknownResourceData(data)
         }
     }
 
-    override fun marshall(output: SequentialWriter) {
+    override fun marshall(output: Sink) {
         marshall(output, this)
     }
 }

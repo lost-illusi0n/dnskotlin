@@ -8,7 +8,7 @@ public enum class ResourceClass(public val value: Short) {
 
     public companion object {
         public fun fromValue(value: Short): ResourceClass? {
-            return ResourceClass.values().find { it.value == value }
+            return entries.find { it.value == value }
         }
     }
 }

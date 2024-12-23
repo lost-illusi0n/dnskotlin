@@ -1,12 +1,9 @@
 package dev.sitar.dns.utils
 
-import dev.sitar.kio.Slice
-import dev.sitar.kio.buffers.ByteArrayBuffer
-
-public sealed class NetworkAddress(public val data: Slice) {
-    public class Ipv4Address(data: Slice) : NetworkAddress(data) {
+public sealed class NetworkAddress(public val data: ByteArray) {
+    public class Ipv4Address(data: ByteArray) : NetworkAddress(data) {
         init {
-            require(data.length == 4)
+            require(data.size == 4)
         }
 
         override fun toString(): String {
@@ -14,18 +11,17 @@ public sealed class NetworkAddress(public val data: Slice) {
         }
     }
 
-    public class Ipv6Address(data: Slice) : NetworkAddress(data) {
+    public class Ipv6Address(data: ByteArray) : NetworkAddress(data) {
         init {
-            require(data.length == 16)
+            require(data.size == 16)
         }
 
         override fun toString(): String {
             return buildString {
-                val buffer = ByteArrayBuffer(data.bytes)
-                buffer.readIndex = data.start
-
                 repeat(8) {
-                    val segment = buffer.readShort()
+                    val offset = it * 2
+                    val segment = (data[offset].toInt() and 0xFF shl 8) or (data[offset + 1].toInt() and 0xFF)
+
                     append(segment.toUShort().toString(16))
                     append(":")
                 }
