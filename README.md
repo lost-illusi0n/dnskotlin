@@ -4,7 +4,7 @@
 An intuitive Kotlin Multiplatform DNS client.
 
 ## Dependency
-`dnskotlin` releases are published to Maven Central (soon). Replace `{version}` with the latest version of `dnskotlin`.
+`dnskotlin` releases are published to Maven Central. Replace `{version}` with the latest version of `dnskotlin`.
 ```kotlin
 implementation("dev.sitar:dnskotlin:{version}")
 ```
