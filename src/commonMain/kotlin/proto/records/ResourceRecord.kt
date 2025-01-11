@@ -1,10 +1,16 @@
-package dev.sitar.dns.records
+package dev.sitar.dns.proto.records
 
-import dev.sitar.dns.MessageReadScope
-import dev.sitar.dns.records.data.*
-import kotlinx.io.*
+import dev.sitar.dns.proto.MessageReadScope
+import dev.sitar.dns.proto.records.data.*
+import kiso.common.logger
+import kiso.log.trace
+import kotlinx.io.Sink
+import kotlinx.io.Source
+import kotlinx.io.readString
 import kotlin.experimental.and
 import kotlin.experimental.inv
+
+private val LOG = logger("parser(resource_record)")
 
 public data class ResourceRecord<T : ResourceData>(
     public val name: String,
@@ -15,7 +21,7 @@ public data class ResourceRecord<T : ResourceData>(
 ) {
     public companion object {
         public fun marshall(output: Sink, record: ResourceRecord<*>) {
-            output.writeString(record.name + Char(0))
+            writeName(record.name, output)
             output.writeShort(record.type.value)
             output.writeShort(record.`class`.value)
             output.writeInt(record.ttl)
@@ -27,8 +33,10 @@ public data class ResourceRecord<T : ResourceData>(
         public fun unmarshall(scope: MessageReadScope): ResourceRecord<*> = scope {
             val name = decompressName(child())
             val type = ResourceType.fromValue(input.readShort())
-            val `class` = ResourceClass.fromValue(input.readShort())!!
+            val `class` = ResourceClass.fromValue(input.readShort())
             val ttl = input.readInt()
+
+            LOG.trace("parsed record header $name $type $`class` $ttl")
 
             val data = when (type) {
                 ResourceType.A -> AResourceData.unmarshall(input)
@@ -49,12 +57,40 @@ public data class ResourceRecord<T : ResourceData>(
                 ResourceType.TXT -> TXTResourceData.unmarshall(input)
                 ResourceType.AAAA -> AAAAResourceData.unmarshall(input)
                 ResourceType.SRV -> SRVResourceData.unmarshall(child())
+                ResourceType.OPT -> OPTResourceData.unmarshall(input)
+                ResourceType.DS -> DSResourceData.unmarshall(input)
+                ResourceType.RRSIG -> RRSIGResourceData.unmarshall(child())
+                ResourceType.DNSKEY -> DNSKEYResourceData.unmarshall(input)
+//                ResourceType.AXFR -> TODO()
+//                ResourceType.MAILB -> TODO()
+//                ResourceType.ALL -> TODO()
                 else -> UnknownResourceData.unmarshall(input)
             }
 
             return ResourceRecord(name, type, `class`, ttl, data)
         }
     }
+}
+
+// convoluted but the byte length of the name consists of label lengths and a null byte.
+// in the case of ROOT (empty), it is simply the terminating null byte. otherwise...
+// the middle label lengths are replaced as dots in the string representation
+// the first label length is not kept in the string, so that is counted as another byte
+// the null byte at the end is not included, so that is counted as another byte
+internal val String.dnsNameByteLength: Short get() = if (isEmpty()) 1 else (length + 2).toShort()
+
+// doesnt compress.
+internal fun writeName(name: String, sink: Sink) {
+    if (name.isNotEmpty()) {
+        val parts = name.split('.')
+
+        parts.forEach {
+            sink.writeByte(it.length.toByte())
+            sink.write(it.encodeToByteArray())
+        }
+    }
+
+    sink.writeByte(0)
 }
 
 private sealed interface DomainPart {
@@ -83,7 +119,9 @@ private fun decompressPart(input: Source): DomainPart {
             return DomainPart.Label.Text(input.readString(len.toLong()))
         }
 
-        else -> error("bad flag")
+        else -> {
+            error("bad flag")
+        }
     }
 }
 

@@ -1,6 +1,8 @@
-package dev.sitar.dns
+package dev.sitar.dns.proto
 
-import dev.sitar.dns.records.ResourceRecord
+import dev.sitar.dns.proto.records.ResourceRecord
+import kiso.common.logger
+import kiso.log.trace
 import kotlinx.io.Buffer
 import kotlinx.io.Sink
 import kotlinx.io.Source
@@ -12,6 +14,8 @@ public data class MessageReadScope(val input: Source, val readSource: Source) {
         return block(this)
     }
 }
+
+private val LOG = logger("parser(message)")
 
 public data class Message(
     val header: MessageHeader,
@@ -37,13 +41,15 @@ public data class Message(
 
             val header = MessageHeader.Factory.unmarshall(current)
 
-            val questions = buildList {
-                repeat(header.qdCount.toInt()) {
-                    add(MessageQuestion.Factory.unmarshall(current))
-                }
-            }
+            LOG.trace("parsed header $header")
 
             val scope = MessageReadScope(current, base.peek())
+
+            val questions = buildList {
+                repeat(header.qdCount.toInt()) {
+                    add(MessageQuestion.Factory.unmarshall(scope.child()))
+                }
+            }
 
             val answers = buildList {
                 repeat(header.anCount.toInt()) {

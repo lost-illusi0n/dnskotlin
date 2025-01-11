@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dev.sitar"
-version = "0.5.1"
+version = "0.6.0"
 
 val javadocJar = tasks.register("javadocJar", Jar::class.java) {
     archiveClassifier.set("javadoc")
@@ -22,10 +22,13 @@ val sonatypePassword: String? = System.getenv("SONATYPE_PASSWORD")
 
 repositories {
     mavenCentral()
+    maven("https://maven.dimensional.fun/releases")
 }
 
 kotlin {
     explicitApi()
+
+    jvmToolchain(19)
 
     jvm()
     linuxX64()
@@ -39,12 +42,18 @@ kotlin {
                 api("io.ktor:ktor-network:3.0.2")
                 implementation("io.ktor:ktor-client-core:3.0.2")
                 implementation("io.ktor:ktor-client-cio:3.0.2")
+
+                // logging
+                implementation("gay.vzt.kiso:kiso-core:0.0.3")
             }
         }
 
         val jvmMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-java:3.0.2")
+
+                // logging api for jvm
+                implementation("gay.vzt.kiso:kiso-log-impl-log4j2:0.0.3")
             }
         }
 

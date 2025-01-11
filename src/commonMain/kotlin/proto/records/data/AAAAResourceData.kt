@@ -1,6 +1,5 @@
-package dev.sitar.dns.records.data
+package dev.sitar.dns.proto.records.data
 
-import dev.sitar.dns.MessageReadScope
 import dev.sitar.dns.utils.NetworkAddress
 import kotlinx.io.Sink
 import kotlinx.io.Source

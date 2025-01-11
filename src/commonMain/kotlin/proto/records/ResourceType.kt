@@ -1,4 +1,4 @@
-package dev.sitar.dns.records
+package dev.sitar.dns.proto.records
 
 public enum class ResourceType(public val value: Short) {
     A(1),
@@ -17,8 +17,13 @@ public enum class ResourceType(public val value: Short) {
     MINFO(14),
     MX(15),
     TXT(16),
-    SRV(33),
     AAAA(28),
+    SRV(33),
+    OPT(41),
+    DS(43),
+    RRSIG(46),
+    NSEC(47),
+    DNSKEY(48),
     AXFR(252),
     MAILB(253),
     ALL(255),

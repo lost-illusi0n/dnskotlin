@@ -1,4 +1,4 @@
-package dev.sitar.dns
+package dev.sitar.dns.proto
 
 import kotlinx.io.Sink
 import kotlinx.io.Source

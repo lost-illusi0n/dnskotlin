@@ -1,9 +1,12 @@
 package dev.sitar.dns
 
-import dev.sitar.dns.records.ResourceClass
-import dev.sitar.dns.records.ResourceRecord
-import dev.sitar.dns.records.ResourceType
-import dev.sitar.dns.records.data.NSResourceData
+import dev.sitar.dns.proto.*
+import dev.sitar.dns.proto.records.ResourceClass
+import dev.sitar.dns.proto.records.ResourceRecord
+import dev.sitar.dns.proto.records.ResourceType
+import dev.sitar.dns.proto.records.data.NSResourceData
+import dev.sitar.dns.proto.records.data.OPTResourceData
+import dev.sitar.dns.proto.records.data.OPTResourceRecord
 import kotlin.random.Random
 
 public class MessageBuilder {
@@ -44,6 +47,10 @@ public class MessageBuilder {
         questions += QuestionBuilder(host).apply(builder).build()
     }
 
+    public fun options(builder: OptionsBuilder.() -> Unit = { }) {
+        additionalRecords += OptionsBuilder().apply(builder).build()
+    }
+
     public fun build(): Message {
         val header = MessageHeader(
             id,
@@ -73,6 +80,23 @@ public class QuestionBuilder(public val host: String) {
             host,
             qType,
             qClass
+        )
+    }
+}
+
+public class OptionsBuilder {
+    public var payloadSize: Short = 4096
+    public var dnssecOk: Boolean = false
+
+    public fun build(): OPTResourceRecord {
+        val flags = if (dnssecOk) (1 shl 15) else 0
+
+        return OPTResourceRecord(
+            "",
+            ResourceType.OPT,
+            ResourceClass.Other(payloadSize),
+            flags,
+            OPTResourceData(emptyList())
         )
     }
 }

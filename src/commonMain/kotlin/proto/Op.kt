@@ -1,4 +1,4 @@
-package dev.sitar.dns
+package dev.sitar.dns.proto
 
 public enum class Op(public val value: Int) {
     Query(0),
@@ -7,7 +7,7 @@ public enum class Op(public val value: Int) {
 
     public companion object {
         public fun fromValue(value: Int): Op? {
-            return values().find { it.value == value }
+            return entries.find { it.value == value }
         }
     }
 }

@@ -1,9 +1,11 @@
 package dev.sitar.dns.transports
 
-import dev.sitar.dns.Message
 import dev.sitar.dns.MessageBuilder
+import dev.sitar.dns.proto.Message
 
 public interface DnsTransport {
+    public val preferredPort: Int
+
     public suspend fun send(to: DnsServer, message: Message): Message?
 }
 

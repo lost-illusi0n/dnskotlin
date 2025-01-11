@@ -1,12 +1,12 @@
 package dev.sitar.dns
 
-import dev.sitar.dns.records.ResourceRecord
-import dev.sitar.dns.records.data.NSResourceData
-import dev.sitar.dns.records.data.ResourceData
+import dev.sitar.dns.proto.Message
+import dev.sitar.dns.proto.records.ResourceRecord
+import dev.sitar.dns.proto.records.data.NSResourceData
+import dev.sitar.dns.proto.records.data.ResourceData
 import dev.sitar.dns.transports.*
 import io.ktor.client.*
 import io.ktor.client.engine.*
-import io.ktor.client.engine.cio.*
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import kotlinx.coroutines.runBlocking
@@ -27,11 +27,6 @@ public val ROOT_NAME_SERVERS: List<String> = listOf(
     "m.root-servers.net",
 )
 
-public sealed interface MessageResponse {
-    public class NameServers(public val nameServers: List<DnsServer>) : MessageResponse
-    public class Answers(public val answers: List<ResourceRecord<*>>) : MessageResponse
-}
-
 public open class Dns(
     public val transport: DnsTransport,
     public val defaultServers: List<DnsServer>
@@ -42,59 +37,49 @@ public open class Dns(
             defaultServers = ROOT_NAME_SERVERS.map { DnsServer(it, TRANSPORT_DNS_PORT) }
         )
 
-    public suspend fun resolve(
-        host: String,
-        nameServers: List<DnsServer> = defaultServers,
-        block: QuestionBuilder.() -> Unit = { }
-    ): MessageResponse? {
-        for (server in nameServers) {
-            val response = transport.send(server) {
-                question(host, block)
-            } ?: continue
+    public open suspend fun resolve(
+        server: DnsServer = defaultServers.first(),
+        block: MessageBuilder.() -> Unit = { }
+    ): Message? {
+        return transport.send(server, block)
+    }
 
-            when {
-                response.answers.isNotEmpty() -> {
-                    return MessageResponse.Answers(response.answers)
-                }
+    public suspend fun resolveRecursively(
+        roots: List<DnsServer> = defaultServers,
+        block: MessageBuilder.() -> Unit = { }
+    ): Message? {
+        var servers = roots
 
-                response.authoritativeRecords.isNotEmpty() -> {
-                    val servers = response.authoritativeRecords.data
-                        .filterIsInstance<NSResourceData>()
-                        .map { DnsServer(it.nameServer, server.port) }
+        while (servers.isNotEmpty()) {
+            val rsp = servers.firstNotNullOfOrNull { resolve(it, block) } ?: break
 
-                    return MessageResponse.NameServers(servers)
-                }
+            if (rsp.answers.isNotEmpty()) return rsp
+
+            if (rsp.authoritativeRecords.isNotEmpty()) {
+                servers = rsp.authoritativeRecords.data
+                    .filterIsInstance<NSResourceData>()
+                    .map { DnsServer(it.nameServer, transport.preferredPort) }
+
+                continue
             }
+
+            return null
         }
 
         return null
     }
 
+    public suspend fun resolve(
+        host: String,
+        server: DnsServer = defaultServers.first(),
+        block: QuestionBuilder.() -> Unit = { }
+    ): List<ResourceRecord<*>> = resolve(server) { question(host, block) }?.answers.orEmpty()
+
     public suspend fun resolveRecursively(
         host: String,
         roots: List<DnsServer> = defaultServers,
         block: QuestionBuilder.() -> Unit = { }
-    ): List<ResourceRecord<*>> {
-        for (root in roots) {
-            var servers = roots
-
-            while (servers.isNotEmpty()) {
-                when (val response = resolve(host, servers, block)) {
-                    is MessageResponse.Answers -> {
-                        return response.answers
-                    }
-
-                    is MessageResponse.NameServers -> {
-                        servers = response.nameServers
-                    }
-
-                    null -> return emptyList()
-                }
-            }
-        }
-
-        return emptyList()
-    }
+    ): List<ResourceRecord<*>> = resolveRecursively(roots) { question(host, block) }?.answers.orEmpty()
 }
 
 private const val DEFAULT_TIMEOUT: Long = 1000

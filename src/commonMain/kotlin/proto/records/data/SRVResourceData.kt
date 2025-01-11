@@ -1,7 +1,7 @@
-package dev.sitar.dns.records.data
+package dev.sitar.dns.proto.records.data
 
-import dev.sitar.dns.MessageReadScope
-import dev.sitar.dns.records.decompressName
+import dev.sitar.dns.proto.MessageReadScope
+import dev.sitar.dns.proto.records.decompressName
 import kotlinx.io.Sink
 
 public data class SRVResourceData(

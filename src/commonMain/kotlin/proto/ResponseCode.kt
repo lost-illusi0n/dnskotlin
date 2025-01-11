@@ -1,4 +1,4 @@
-package dev.sitar.dns
+package dev.sitar.dns.proto
 
 public enum class ResponseCode(public val value: Int) {
     NoError(0),
@@ -10,7 +10,7 @@ public enum class ResponseCode(public val value: Int) {
 
     public companion object {
         public fun fromValue(value: Int): ResponseCode? {
-            return values().find { it.value == value }
+            return entries.find { it.value == value }
         }
     }
 }

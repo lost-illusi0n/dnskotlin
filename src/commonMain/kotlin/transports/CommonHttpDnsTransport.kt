@@ -1,10 +1,14 @@
 package dev.sitar.dns.transports
 
-import dev.sitar.dns.Message
+import dev.sitar.dns.proto.Message
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import kiso.common.logger
+import kiso.log.error
+import kiso.log.trace
+import kiso.log.warn
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.io.Buffer
 import kotlinx.io.readByteArray
@@ -17,16 +21,21 @@ public enum class DohRequest {
 
 private val DNS_MESSAGE = ContentType("application", "dns-message")
 
+private val LOG = logger("transport(https)")
+
 public class CommonHttpDnsTransport(
     public val client: HttpClient,
     public val request: DohRequest,
-    public val timeout: Long
+    public val timeout: Long,
+    override val preferredPort: Int = APPLICATION_DNS_PORT
 ) : DnsTransport {
     @OptIn(ExperimentalEncodingApi::class)
     override suspend fun send(to: DnsServer, message: Message): Message? {
         val data = Buffer()
 
         Message.Factory.marshall(data, message)
+
+        LOG.trace { "tx doh $request for ${message.header.id}" }
 
         val rsp = withTimeoutOrNull(timeout) {
             when (request) {
@@ -61,18 +70,26 @@ public class CommonHttpDnsTransport(
             }
         }
 
-        if (rsp == null) return null
+        if (rsp == null) {
+            LOG.warn { "missing rx for ${message.header.id}" }
+            return null
+        }
 
-        require(rsp.contentType() == DNS_MESSAGE)
+        try {
+            require(rsp.contentType() == DNS_MESSAGE)
 
-        val payload = Buffer()
-        payload.write(rsp.readRawBytes())
+            val payload = Buffer()
+            payload.write(rsp.readRawBytes())
 
-        val msg = Message.Factory.unmarshall(payload)
+            val msg = Message.Factory.unmarshall(payload)
 
-        require(msg.header.id == message.header.id)
-        require(msg.header.qr)
+            require(msg.header.id == message.header.id)
+            require(msg.header.qr)
 
-        return msg
+            return msg
+        } catch (e: Exception) {
+            LOG.error { "failed to parse doh rx for ${message.header.id}" }
+            return null
+        }
     }
 }
