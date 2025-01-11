@@ -54,7 +54,7 @@ DNSSEC validation is partially supported out-of-the box on the JVM. Native platf
 // on the jvm, there is a built-in crypto impl. no need to specify.
 val dns = dohDns(request = DohRequest.Post).validating()
 
-val validation = dns.resolveRecursively("sitar.dev") { qType = ResourceType.A }
+val validation = dns.validateRecursively("sitar.dev") { qType = ResourceType.A }
 require(validation.isValid)
 require(validation.data) // verification data
 println(validation.message)
