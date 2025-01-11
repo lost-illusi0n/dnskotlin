@@ -56,6 +56,6 @@ val dns = dohDns(request = DohRequest.Post).validating()
 
 val validation = dns.validateRecursively("sitar.dev") { qType = ResourceType.A }
 require(validation.isValid)
-require(validation.data) // verification data
+println(validation.data) // verification data
 println(validation.message)
 ```
