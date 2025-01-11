@@ -21,7 +21,7 @@ public data class ResourceRecord<T : ResourceData>(
 ) {
     public companion object {
         public fun marshall(output: Sink, record: ResourceRecord<*>) {
-            writeName(record.name, output)
+            write_name(record.name, output)
             output.writeShort(record.type.value)
             output.writeShort(record.`class`.value)
             output.writeInt(record.ttl)
@@ -31,7 +31,7 @@ public data class ResourceRecord<T : ResourceData>(
 
 
         public fun unmarshall(scope: MessageReadScope): ResourceRecord<*> = scope {
-            val name = decompressName(child())
+            val name = decompress_name(child())
             val type = ResourceType.fromValue(input.readShort())
             val `class` = ResourceClass.fromValue(input.readShort())
             val ttl = input.readInt()
@@ -80,7 +80,7 @@ public data class ResourceRecord<T : ResourceData>(
 internal val String.dnsNameByteLength: Short get() = if (isEmpty()) 1 else (length + 2).toShort()
 
 // doesnt compress.
-internal fun writeName(name: String, sink: Sink) {
+internal fun write_name(name: String, sink: Sink) {
     if (name.isNotEmpty()) {
         val parts = name.split('.')
 
@@ -104,7 +104,7 @@ private sealed interface DomainPart {
 
 private const val LABEL_MASK = 0xc0.toByte()
 
-private fun decompressPart(input: Source): DomainPart {
+private fun decompress_part(input: Source): DomainPart {
     val len = input.readByte()
 
     when (len and LABEL_MASK) {
@@ -125,10 +125,10 @@ private fun decompressPart(input: Source): DomainPart {
     }
 }
 
-internal fun decompressName(scope: MessageReadScope): String = scope {
+internal fun decompress_name(scope: MessageReadScope): String = scope {
     return buildList {
         while (true) {
-            when (val part = decompressPart(input)) {
+            when (val part = decompress_part(input)) {
                 is DomainPart.Label.Text -> {
                     add(part.text)
                 }
@@ -138,7 +138,7 @@ internal fun decompressName(scope: MessageReadScope): String = scope {
 
                     pointerSource.skip(part.offset.toLong())
 
-                    add(decompressName(child(current = pointerSource)))
+                    add(decompress_name(child(current = pointerSource)))
 
                     break
                 }

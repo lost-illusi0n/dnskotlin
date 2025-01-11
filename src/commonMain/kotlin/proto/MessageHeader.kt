@@ -23,15 +23,15 @@ public data class MessageHeader(
             output.writeShort(header.id)
 
             var b1 = header.op.value shl 3
-            b1 = b1 or (header.qr.asInt shl 7)
-            b1 = b1 or (header.aa.asInt shl 2)
-            b1 = b1 or (header.tc.asInt shl 1)
-            b1 = b1 or (header.rd.asInt shl 0)
+            b1 = b1 or (header.qr.as_int shl 7)
+            b1 = b1 or (header.aa.as_int shl 2)
+            b1 = b1 or (header.tc.as_int shl 1)
+            b1 = b1 or (header.rd.as_int shl 0)
 
             output.writeByte(b1.toByte())
 
             var b2 = header.responseCode.value
-            b2 = b2 or (header.ra.asInt shl 7)
+            b2 = b2 or (header.ra.as_int shl 7)
 
             output.writeByte(b2.toByte())
 
@@ -65,7 +65,7 @@ public data class MessageHeader(
     }
 }
 
-private val Boolean.asInt: Int
+private val Boolean.as_int: Int
     get() = when (this) {
         true -> 1
         false -> 0

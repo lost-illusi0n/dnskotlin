@@ -1,7 +1,7 @@
 package dev.sitar.dns.proto.records.data
 
 import dev.sitar.dns.proto.MessageReadScope
-import dev.sitar.dns.proto.records.decompressName
+import dev.sitar.dns.proto.records.decompress_name
 import kotlinx.io.Sink
 
 public data class SRVResourceData(
@@ -26,7 +26,7 @@ public data class SRVResourceData(
             val weight = input.readShort().toUShort()
             val port = input.readShort().toUShort()
 
-            val target = decompressName(child())
+            val target = decompress_name(child())
 
             return SRVResourceData(priority, weight, port, target)
         }
