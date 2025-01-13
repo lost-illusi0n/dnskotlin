@@ -12,6 +12,9 @@ public data class MessageHeader(
     val tc: Boolean,
     val rd: Boolean,
     val ra: Boolean,
+    val z: Boolean,
+    val ad: Boolean,
+    val cd: Boolean,
     val responseCode: ResponseCode,
     val qdCount: UShort,
     val anCount: UShort,
@@ -32,6 +35,9 @@ public data class MessageHeader(
 
             var b2 = header.responseCode.value
             b2 = b2 or (header.ra.as_int shl 7)
+            b2 = b2 or (header.z.as_int shl 6)
+            b2 = b2 or (header.ad.as_int shl 5)
+            b2 = b2 or (header.cd.as_int shl 4)
 
             output.writeByte(b2.toByte())
 
@@ -53,6 +59,9 @@ public data class MessageHeader(
 
             val b2 = input.readByte()
             val ra = b2.toInt() and 0x80 == 0x80
+            val z = b2.toInt() and 0x40 == 0x40
+            val ad = b2.toInt() and 0x20 == 0x20
+            val cd = b2.toInt() and 0x10 == 0x10
             val responseCode = ResponseCode.fromValue(b2.toInt() and 0xF)!!
 
             val qdCount = input.readShort().toUShort()
@@ -60,7 +69,7 @@ public data class MessageHeader(
             val nsCount = input.readShort().toUShort()
             val arCount = input.readShort().toUShort()
 
-            return MessageHeader(id, qr, op, aa, tc, rd, ra, responseCode, qdCount, anCount, nsCount, arCount)
+            return MessageHeader(id, qr, op, aa, tc, rd, ra, z, ad, cd, responseCode, qdCount, anCount, nsCount, arCount)
         }
     }
 }

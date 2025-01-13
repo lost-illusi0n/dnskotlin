@@ -29,6 +29,8 @@ public class CommonHttpDnsTransport(
     public val timeout: Long,
     override val preferredPort: Int = APPLICATION_DNS_PORT
 ) : DnsTransport {
+    override val isSecure: Boolean = true
+
     @OptIn(ExperimentalEncodingApi::class)
     override suspend fun send(to: DnsServer, message: Message): Message? {
         val data = Buffer()

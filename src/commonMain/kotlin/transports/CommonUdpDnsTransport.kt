@@ -15,6 +15,8 @@ public class CommonUdpDnsTransport(
     public val socket: BoundDatagramSocket, public val timeout: Long,
     override val preferredPort: Int = TRANSPORT_DNS_PORT
 ) : DnsTransport {
+    override val isSecure: Boolean = false
+
     public override suspend fun send(to: DnsServer, message: Message): Message? {
         val source = Buffer().apply { Message.Factory.marshall(this, message) }
         socket.send(Datagram(source, InetSocketAddress(to.host, to.port)))

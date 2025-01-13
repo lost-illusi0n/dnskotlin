@@ -16,6 +16,9 @@ public class MessageBuilder {
     public var aa: Boolean = false
     public var rd: Boolean = true
     public var ra: Boolean = false
+    public var z: Boolean = false
+    public var ad: Boolean = false
+    public var cd: Boolean = false
     public var rCode: ResponseCode = ResponseCode.NoError
 
     public val questions: MutableList<MessageQuestion> = mutableListOf()
@@ -60,6 +63,9 @@ public class MessageBuilder {
             false,
             rd,
             ra,
+            z,
+            ad,
+            cd,
             rCode,
             questions.size.toUShort(),
             answers.size.toUShort(),

@@ -2,6 +2,7 @@ package dev.sitar.dns
 
 import dev.sitar.dns.crypto.Crypto
 import dev.sitar.dns.dnssec.ValidatingDns
+import dev.sitar.dns.dnssec.ValidationStrategy
 import dev.sitar.dns.dnssec.validating
 import java.math.BigInteger
 import java.security.KeyFactory
@@ -59,4 +60,5 @@ public object JvmCrypto : Crypto {
     }
 }
 
+public fun Dns.validating(strategy: ValidationStrategy): ValidatingDns = validating(JvmCrypto, strategy)
 public fun Dns.validating(): ValidatingDns = validating(JvmCrypto)

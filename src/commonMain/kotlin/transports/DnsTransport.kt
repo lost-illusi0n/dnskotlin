@@ -5,6 +5,7 @@ import dev.sitar.dns.proto.Message
 
 public interface DnsTransport {
     public val preferredPort: Int
+    public val isSecure: Boolean
 
     public suspend fun send(to: DnsServer, message: Message): Message?
 }
